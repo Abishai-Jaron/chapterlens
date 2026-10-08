@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChapterLens — Readability for Authors</title>
+<style>
+:root{--bg:#f7f5f0;--card:#fff;--ink:#20211f;--muted:#6d6b65;--line:#dfddd6;--accent:#222;--soft:#eeece5;--hard:#fff0a8}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+header{max-width:1100px;margin:auto;padding:28px 22px 16px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:800;font-size:21px}.tag{color:var(--muted);font-size:13px}
+main{max-width:1100px;margin:auto;padding:10px 22px 50px}
+h1{font:700 clamp(32px,5vw,52px)/1.05 Georgia,serif;margin:30px 0 10px;letter-spacing:-1px}
+.sub{color:var(--muted);max-width:650px;margin:0 0 26px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 4px 18px #00000008}
+textarea{width:100%;min-height:430px;border:0;outline:0;resize:vertical;font:17px/1.75 Georgia,serif;color:var(--ink);background:transparent}
+button{border:0;border-radius:10px;padding:11px 16px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+button.secondary{background:var(--soft);color:var(--ink)} .actions{display:flex;gap:9px;border-top:1px solid var(--line);padding-top:14px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:var(--soft);border-radius:12px;padding:13px}.num{font-size:26px;font-weight:800}.label{font-size:12px;color:var(--muted)}
+.score{font-size:54px;font-weight:800;line-height:1;margin:8px 0}.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:var(--soft);font-size:12px}
+h2{font:700 20px Georgia,serif;margin:0 0 13px}.section{margin-top:18px}
+.hard{padding:12px;border-left:4px solid var(--ink);background:#faf8ef;margin:9px 0;border-radius:0 10px 10px 0;font-family:Georgia,serif}
+.preview{font:17px/1.8 Georgia,serif;background:#fcfbf8;padding:16px;border-radius:12px;white-space:pre-wrap}.hl{background:var(--hard);border-radius:3px}
+small{color:var(--muted)} footer{max-width:1100px;margin:auto;padding:0 22px 35px;color:var(--muted);font-size:12px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}textarea{min-height:320px}}
+</style>
+</head>
+<body>
+<header><div class="logo">ChapterLens</div><div class="tag">Private • runs in your browser</div></header>
+<main>
+<h1>Make your chapter easier to read.</h1>
+<p class="sub">Paste a chapter to get a Flesch Reading Ease score, grade level, and the five sentences that create the most reading friction. Nothing is uploaded.</p>
+<div class="grid">
+<section class="card">
+<textarea id="input" placeholder="Paste your chapter here…">Mara opened the old door and paused. The hallway beyond was narrow, dark, and strangely quiet. Although she had promised herself that she would never return to the house, the note in her pocket had changed everything, because it contained a name she had not seen since childhood. She stepped forward carefully, listening for any sound that might reveal who was waiting for her. At the end of the corridor, a single lamp flickered.</textarea>
+<div class="actions"><button onclick="analyze()">Analyze chapter</button><button class="secondary" onclick="document.getElementById('input').value='';analyze()">Clear</button></div>
+</section>
+<aside>
+<div class="card">
+<h2>Readability</h2><div class="score" id="score">—</div><span class="pill" id="grade">Waiting for text</span>
+<div class="stats section">
+<div class="stat"><div class="num" id="words">0</div><div class="label">WORDS</div></div>
+<div class="stat"><div class="num" id="sentences">0</div><div class="label">SENTENCES</div></div>
+<div class="stat"><div class="num" id="avg">0</div><div class="label">WORDS / SENTENCE</div></div>
+<div class="stat"><div class="num" id="syll">0</div><div class="label">SYLLABLES</div></div>
+</div></div>
+<div class="card section"><h2>Five hardest sentences</h2><div id="hardest"><small>Analyze a chapter to see them.</small></div></div>
+</aside>
+</div>
+<div class="card section"><h2>Highlighted chapter</h2><div id="preview" class="preview">Your five hardest sentences will appear highlighted here.</div></div>
+</main>
+<footer>ChapterLens uses standard readability formulas. Readability scores are estimates, not judgments of literary quality.</footer>
+<script>
+function words(s){return s.trim().match(/\b[\w’'-]+\b/g)||[]}
+function syllable(w){w=w.toLowerCase().replace(/[^a-z]/g,'');if(!w)return 0;if(w.length<=3)return 1;w=w.replace(/(?:[^aeiouy]e)$/,'').replace(/^y/,'');let n=(w.match(/[aeiouy]{1,2}/g)||[]).length;return Math.max(1,n)}
+function splitSentences(t){return t.replace(/\s+/g,' ').match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[]}
+function analyze(){
+ const t=document.getElementById('input').value.trim(), ss=splitSentences(t), ws=words(t);
+ const totalS=ws.reduce((a,w)=>a+syllable(w),0), n=ws.length, sn=ss.length;
+ const ease=n&&sn ? 206.835-1.015*(n/sn)-84.6*(totalS/n):0;
+ const grade=n&&sn ? 0.39*(n/sn)+11.8*(totalS/n)-15.59:0;
+ document.getElementById('score').textContent=n?Math.max(0,Math.min(100,ease)).toFixed(0):'—';
+ document.getElementById('grade').textContent=n?`Approx. Grade ${Math.max(0,grade).toFixed(1)}`:'Waiting for text';
+ document.getElementById('words').textContent=n;
+ document.getElementById('sentences').textContent=sn;
+ document.getElementById('avg').textContent=sn?(n/sn).toFixed(1):0;
+ document.getElementById('syll').textContent=totalS;
+ const ranked=ss.map((s,i)=>{let w=words(s), sy=w.reduce((a,x)=>a+syllable(x),0), g=.39*(w.length||1)+11.8*(sy/(w.length||1))-15.59;return {s,i,g,w:w.length}}).sort((a,b)=>b.g-a.g).slice(0,5);
+ document.getElementById('hardest').innerHTML=ranked.length?ranked.map((x,i)=>`<div class="hard"><b>#${i+1}</b> <small>Grade ${Math.max(0,x.g).toFixed(1)} • ${x.w} words</small><br>${escapeHtml(x.s)}</div>`).join(''):'<small>Not enough text.</small>';
+ const ids=new Set(ranked.map(x=>x.i));
+ document.getElementById('preview').innerHTML=ss.map((s,i)=>ids.has(i)?`<span class="hl">${escapeHtml(s)}</span>`:escapeHtml(s)).join(' ');
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+analyze();
+</script>
+</body></html>
